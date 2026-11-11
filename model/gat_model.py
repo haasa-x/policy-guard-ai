@@ -56,7 +56,8 @@ GAT_IN_CHANNELS: int = 768       # node feature width (== embedding_dim)
 GAT_HIDDEN_CHANNELS: int = 256   # per-head output width of layer 1
 GAT_HEADS: int = 8               # attention heads in layer 1
 GAT_NUM_CLASSES: int = 2         # SAFE (0) / HARMFUL (1)
-GAT_DROPOUT: float = 0.6         # dropout applied inside both GATConv layers
+GAT_DROPOUT: float = 0.5         # dropout applied inside both GATConv layers
+GAT_CLASSIFIER_DROPOUT: float = 0.3  # dropout before the final linear head
 
 
 def _embedding_dim_from_config() -> Optional[int]:
@@ -100,7 +101,7 @@ class CHEMGraphAttentionNetwork(nn.Module):
     num_classes : int, optional
         Number of output classes (default 2).
     dropout : float, optional
-        Dropout probability used inside both GAT layers (default 0.6).
+        Dropout probability used inside both GAT layers (default 0.5).
 
     Attributes
     ----------
@@ -140,6 +141,7 @@ class CHEMGraphAttentionNetwork(nn.Module):
         self.heads = int(heads)
         self.num_classes = int(num_classes)
         self.dropout = float(dropout)
+        self.classifier_dropout = GAT_CLASSIFIER_DROPOUT
 
         # Layer 1: multi-head attention, heads concatenated -> hidden*heads dim.
         self.gat1 = GATConv(
@@ -203,6 +205,7 @@ class CHEMGraphAttentionNetwork(nn.Module):
         pooled = global_mean_pool(h, batch)
 
         # --- Classification head + log-softmax. -----------------------------
+        pooled = F.dropout(pooled, p=self.classifier_dropout, training=self.training)
         logits = self.classifier(pooled)
         return F.log_softmax(logits, dim=-1)
 

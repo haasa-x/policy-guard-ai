@@ -245,8 +245,12 @@ class CHEMPipeline:
             "fused_score": score.get("harm_score", 0.0),
             "cross_modal_flag": False,
         }
-        # Blend the graph-level GAT/pattern score with the modality fusion score.
-        final_score = max(float(score.get("harm_score", 0.0)), float(fused.get("fused_score", 0.0)))
+        # Weighted blend: GAT graph score (70%) + modality fusion (30%).
+        # Using max() was too aggressive — a single noisy encoder could flip the
+        # verdict. A blend requires both signals to agree before scoring high.
+        gat_score   = float(score.get("harm_score", 0.0))
+        fused_score = float(fused.get("fused_score", 0.0))
+        final_score = 0.7 * gat_score + 0.3 * fused_score
         threshold = get_coefficient("final_harm_threshold")
         verdict = "HARMFUL" if final_score >= threshold else "SAFE"
 

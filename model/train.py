@@ -49,10 +49,11 @@ from model.gat_model import CHEMGraphAttentionNetwork
 _CHECKPOINT_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), "checkpoints"))
 _BEST_CHECKPOINT_PATH = os.path.join(_CHECKPOINT_DIR, "best_gat.pt")
 
-# Training hyper-parameters fixed by the CHEM spec / INTERFACES.md.
-_LEARNING_RATE = 0.005
-_WEIGHT_DECAY = 5e-4
-_EARLY_STOP_PATIENCE = 20
+# Training hyper-parameters.
+_LEARNING_RATE = 0.001        # lower LR works better with AdamW + scheduler
+_WEIGHT_DECAY = 1e-3
+_EARLY_STOP_PATIENCE = 30     # more patience for the scheduler to kick in
+_LR_SCHEDULE_PATIENCE = 5     # halve LR if val F1 stalls for this many epochs
 
 
 # --------------------------------------------------------------------------- #
@@ -263,7 +264,23 @@ def _compute_metrics(y_true: List[int], y_prob: List[float]) -> Dict[str, float]
 # --------------------------------------------------------------------------- #
 # Train / evaluate loops
 # --------------------------------------------------------------------------- #
-def _evaluate(model, loader, device) -> Dict[str, Any]:
+def _compute_class_weights(dataset: List[Any], device) -> torch.Tensor:
+    """Compute inverse-frequency class weights to handle the harmful/safe imbalance.
+
+    Returns a 2-element tensor [w_safe, w_harmful] where the minority class
+    gets a higher weight so the loss treats both classes equally.
+    """
+    labels = [int(d.y.item()) for d in dataset]
+    n = len(labels)
+    n_harmful = sum(labels)
+    n_safe = n - n_harmful
+    # weight = total / (n_classes * count_per_class)
+    w_safe    = n / (2.0 * max(n_safe, 1))
+    w_harmful = n / (2.0 * max(n_harmful, 1))
+    return torch.tensor([w_safe, w_harmful], dtype=torch.float, device=device)
+
+
+def _evaluate(model, loader, device, criterion=None) -> Dict[str, Any]:
     """Run the model over a loader and return metrics + raw predictions.
 
     Parameters
@@ -274,6 +291,8 @@ def _evaluate(model, loader, device) -> Dict[str, Any]:
         Batched graphs.
     device : torch.device
         Compute device.
+    criterion : loss function, optional
+        If None a plain NLLLoss is used (for backward compat).
 
     Returns
     -------
@@ -281,7 +300,8 @@ def _evaluate(model, loader, device) -> Dict[str, Any]:
         ``{"metrics": {...}, "loss": float}``.
     """
     model.eval()
-    criterion = nn.NLLLoss()
+    if criterion is None:
+        criterion = nn.NLLLoss()
     y_true: List[int] = []
     y_prob: List[float] = []
     total_loss = 0.0
@@ -407,12 +427,24 @@ def train(
     val_loader = DataLoader(splits["val"], batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(splits["test"], batch_size=batch_size, shuffle=False)
 
+    # --- Class weights: upweight the minority (harmful) class. -------------
+    class_weights = _compute_class_weights(splits["train"], device)
+    n_harmful = int(class_weights.argmin().item() == 0)  # for logging only
+    print(
+        f"[CHEM][train] Class weights -> safe={class_weights[0]:.3f} "
+        f"harmful={class_weights[1]:.3f}"
+    )
+
     # --- Model / optimiser / loss. -----------------------------------------
     model = CHEMGraphAttentionNetwork().to(device)
-    optimizer = torch.optim.Adam(
+    optimizer = torch.optim.AdamW(
         model.parameters(), lr=_LEARNING_RATE, weight_decay=_WEIGHT_DECAY
     )
-    criterion = nn.NLLLoss()
+    # Halve LR when val F1 stops improving — helps escape plateaus.
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode="max", factor=0.5, patience=_LR_SCHEDULE_PATIENCE
+    )
+    criterion = nn.NLLLoss(weight=class_weights)
 
     os.makedirs(_CHECKPOINT_DIR, exist_ok=True)
 
@@ -422,7 +454,7 @@ def train(
     print("[CHEM][train] Starting training ...")
     for epoch in range(1, epochs + 1):
         train_loss = _train_one_epoch(model, train_loader, optimizer, criterion, device)
-        val_eval = _evaluate(model, val_loader, device)
+        val_eval = _evaluate(model, val_loader, device, criterion)
         val_metrics = val_eval["metrics"]
         val_f1 = val_metrics.get("f1", 0.0)
 
@@ -441,6 +473,9 @@ def train(
                 **{f"val_{k}": v for k, v in val_metrics.items()},
             },
         )
+
+        # LR scheduler step (reduce on plateau).
+        scheduler.step(val_f1)
 
         # Checkpoint + early-stopping bookkeeping.
         if val_f1 > best_val_f1:
