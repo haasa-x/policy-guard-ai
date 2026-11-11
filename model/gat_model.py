@@ -151,18 +151,20 @@ class CHEMGraphAttentionNetwork(nn.Module):
             dropout=self.dropout,
             concat=True,
         )
+        self.bn1 = nn.BatchNorm1d(self.hidden_channels * self.heads)
 
-        # Layer 2: single-head attention collapsing to `num_classes` features.
+        # Layer 2: single-head attention collapsing to hidden dim.
         self.gat2 = GATConv(
             in_channels=self.hidden_channels * self.heads,
-            out_channels=self.num_classes,
+            out_channels=self.hidden_channels,
             heads=1,
             concat=False,
             dropout=self.dropout,
         )
+        self.bn2 = nn.BatchNorm1d(self.hidden_channels)
 
-        # Classification head over the mean-pooled graph representation.
-        self.classifier = nn.Linear(self.num_classes, self.num_classes)
+        # Classification head: hidden -> num_classes.
+        self.classifier = nn.Linear(self.hidden_channels, self.num_classes)
 
     def forward(
         self,
@@ -193,13 +195,16 @@ class CHEMGraphAttentionNetwork(nn.Module):
             # Single-graph inference: every node belongs to graph 0.
             batch = x.new_zeros(x.size(0), dtype=torch.long)
 
-        # --- Layer 1: attention + ELU non-linearity + dropout. --------------
+        # --- Layer 1: attention + BN + ELU + dropout. -----------------------
         h = self.gat1(x, edge_index)
+        h = self.bn1(h)
         h = F.elu(h)
         h = F.dropout(h, p=self.dropout, training=self.training)
 
-        # --- Layer 2: attention down to class features. ---------------------
+        # --- Layer 2: attention + BN + ELU. --------------------------------
         h = self.gat2(h, edge_index)
+        h = self.bn2(h)
+        h = F.elu(h)
 
         # --- Readout: mean-pool nodes -> one vector per graph. --------------
         pooled = global_mean_pool(h, batch)
@@ -246,6 +251,7 @@ class CHEMGraphAttentionNetwork(nn.Module):
         h, (edge_index_1, alpha_1) = self.gat1(
             x, edge_index, return_attention_weights=True
         )
+        h = self.bn1(h)
         h = F.elu(h)
         h = F.dropout(h, p=self.dropout, training=self.training)
 
@@ -253,8 +259,11 @@ class CHEMGraphAttentionNetwork(nn.Module):
         h, (edge_index_2, alpha_2) = self.gat2(
             h, edge_index, return_attention_weights=True
         )
+        h = self.bn2(h)
+        h = F.elu(h)
 
         pooled = global_mean_pool(h, batch)
+        pooled = F.dropout(pooled, p=self.classifier_dropout, training=self.training)
         logits = self.classifier(pooled)
         log_probs = F.log_softmax(logits, dim=-1)
 

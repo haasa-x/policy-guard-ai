@@ -113,6 +113,7 @@ def _build_dataset(
     samples: List[Dict[str, Any]],
     text_encoder,
     image_encoder,
+    data_dir: Optional[str] = None,
 ) -> List[Any]:
     """Encode + graph-build every sample into a list of PyG ``Data`` objects.
 
@@ -364,6 +365,7 @@ def train(
     batch_size: int = 32,
     data_dir: Optional[str] = None,
     wandb_project: str = "chem",
+    max_samples: Optional[int] = None,
 ) -> Optional[str]:
     """Run the full CHEM GAT training + evaluation pipeline.
 
@@ -405,11 +407,17 @@ def train(
     samples += _load_samples("dev", data_dir)
     print(f"[CHEM][train] Loaded {len(samples)} raw samples.")
 
+    if max_samples and max_samples < len(samples):
+        import random
+        random.Random(42).shuffle(samples)
+        samples = samples[:max_samples]
+        print(f"[CHEM][train] Capped to {max_samples} samples (--max_samples).")
+
     if not samples:
         print("[CHEM][train] ERROR: no samples available; aborting training.")
         return None
 
-    dataset = _build_dataset(samples, text_encoder, image_encoder)
+    dataset = _build_dataset(samples, text_encoder, image_encoder, data_dir=data_dir)
     print(f"[CHEM][train] Built {len(dataset)} content-composition graphs.")
     if not dataset:
         print("[CHEM][train] ERROR: no graphs built; aborting training.")
@@ -628,6 +636,12 @@ def main() -> None:
         default="chem",
         help="Weights & Biases project name.",
     )
+    parser.add_argument(
+        "--max_samples",
+        type=int,
+        default=None,
+        help="Cap total samples (randomly chosen). Use for a quick training run.",
+    )
     args = parser.parse_args()
 
     train(
@@ -635,6 +649,7 @@ def main() -> None:
         batch_size=args.batch_size,
         data_dir=args.data_dir,
         wandb_project=args.wandb_project,
+        max_samples=args.max_samples,
     )
 
 
