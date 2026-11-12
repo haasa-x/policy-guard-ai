@@ -262,6 +262,67 @@
     "acoustic_agitation_sigma_ratio": 1.0
   },
 
+  "rules": {
+    "description": "Config for the deterministic rules engine (api/rules_engine.py). All patterns, thresholds and adjustment values live here.",
+
+    "final_harm_threshold": 0.50,
+
+    "direct_threat": {
+      "toxic_threshold": 0.85,
+      "patterns": [
+        "i will (kill|hurt|find|destroy|murder|stab|shoot|attack) you",
+        "i'll (kill|hurt|find|destroy|murder|stab|shoot|attack) you",
+        "i am going to (kill|hurt|find|destroy|murder|stab|shoot|attack) you",
+        "i'm going to (kill|hurt|find|destroy|murder|stab|shoot|attack) you",
+        "you are going to (die|suffer|regret|pay for this)",
+        "you're going to (die|suffer|regret|pay for this)",
+        "you will (die|suffer|regret)",
+        "i know where you (live|sleep|work)",
+        "watch your back",
+        "you're dead",
+        "you are dead",
+        "i will make you (pay|suffer|regret)",
+        "i'll make you (pay|suffer|regret)"
+      ]
+    },
+
+    "cross_modal_harm": {
+      "text_threshold": 0.50,
+      "image_threshold": 0.45,
+      "score_bonus": 0.20
+    },
+
+    "exculpatory_idiom": {
+      "score_penalty": 0.30,
+      "patterns": [
+        "killed it",
+        "dying (of |with )?laugh",
+        "dead(ly)? funny",
+        "crushed (the |it|that)",
+        "this is (so |too )?(funny|hilarious|wild|crazy)",
+        "slayed? (it|that|the)",
+        "murder(ing)? (the|that|this) (beat|stage|set|performance|exam|test|interview)",
+        "i('m| am) (dead|deceased)",
+        "that('s| is) (fire|lit|sick|insane|crazy|wild)",
+        "broke (the|it|that)",
+        "destroy(ed|ing) (the|it|that) (competition|game|test|exam|set)"
+      ]
+    },
+
+    "all_clear": {
+      "max_modality_score": 0.25,
+      "flagged_keywords": [
+        "kill", "hurt", "hate", "attack", "weapon", "bomb", "threat",
+        "die", "murder", "rape", "abuse", "terrorist", "explicit"
+      ]
+    },
+
+    "grey_zone": {
+      "score_low": 0.35,
+      "score_high": 0.65
+    }
+  },
+
   "node_types": ["text", "image", "audio", "video", "action"],
 
   "edge_types": {

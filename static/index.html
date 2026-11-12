@@ -401,6 +401,12 @@ canvas#graph{background:var(--s1);border:1px solid var(--border);flex:1;min-heig
       <div class="r-val" id="r-evidence" style="font-size:11px;color:var(--muted)"><span class="r-dash">—</span></div>
     </div>
 
+    <div class="right-block" id="rule-block" style="display:none">
+      <div class="r-label">RULE FIRED</div>
+      <div style="font-size:11px;color:var(--amber);margin-bottom:4px" id="r-rule-name"></div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.6" id="r-rule-note"></div>
+    </div>
+
     <div class="explanation-block">
       <div class="r-label">EXPLANATION</div>
       <div class="expl-text" id="r-expl">Awaiting analysis…</div>
@@ -711,6 +717,16 @@ function renderResult(d) {
   const re=document.getElementById('r-evidence');
   const els=d.triggered_elements||[];
   re.textContent=els.length?`${els.length} element(s) triggered`:'none';
+
+  // Rule fired
+  const ruleBlock = document.getElementById('rule-block');
+  if (d.rule_fired && d.rule_fired !== 'none') {
+    document.getElementById('r-rule-name').textContent = d.rule_fired.replace(/_/g,' ').toUpperCase();
+    document.getElementById('r-rule-note').textContent = d.rule_note || '';
+    ruleBlock.style.display = 'block';
+  } else {
+    ruleBlock.style.display = 'none';
+  }
 
   // Explanation
   document.getElementById('r-expl').textContent = d.explanation||'No explanation returned.';

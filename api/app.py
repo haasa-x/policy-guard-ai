@@ -35,6 +35,7 @@ from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from utils.config import get_coefficient, get_policy_clause, load_policy_config
+from api.rules_engine import apply_rules
 
 
 def _is_exculpatory(text: Optional[str]) -> bool:
@@ -250,9 +251,14 @@ class CHEMPipeline:
         # verdict. A blend requires both signals to agree before scoring high.
         gat_score   = float(score.get("harm_score", 0.0))
         fused_score = float(fused.get("fused_score", 0.0))
-        final_score = 0.7 * gat_score + 0.3 * fused_score
-        threshold = get_coefficient("final_harm_threshold")
-        verdict = "HARMFUL" if final_score >= threshold else "SAFE"
+        blended_score = 0.7 * gat_score + 0.3 * fused_score
+
+        # --- Rules engine: deterministic layer on top of the blend ----------
+        rule_result = apply_rules(blended_score, modality_scores, text)
+        final_score = rule_result["final_score"]
+        verdict     = rule_result["verdict"]
+        rule_fired  = rule_result["rule_fired"]
+        rule_note   = rule_result["rule_note"]
 
         matched_pattern = score.get("matched_pattern")
         policy_clause = score.get("policy_clause")
@@ -282,6 +288,8 @@ class CHEMPipeline:
         return {
             "harm_score": round(final_score, 4),
             "verdict": verdict,
+            "rule_fired": rule_fired,
+            "rule_note": rule_note,
             "policy_clause": policy_clause,
             "triggered_category": triggered_category,
             "triggered_elements": score.get("triggered_elements", []),
