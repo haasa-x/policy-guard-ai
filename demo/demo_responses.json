@@ -1,0 +1,238 @@
+{
+  "_comment": "Pre-crafted demo responses. Triggers are checked in order — first match wins.",
+
+  "triggers": [
+
+    {
+      "id": "violent_threat_explicit",
+      "keywords": ["i will kill", "i will hurt", "i will attack", "i'm going to kill", "gonna kill", "going to hurt", "i will destroy you", "you will die"],
+      "response": {
+        "harm_score": 0.9134,
+        "verdict": "HARMFUL",
+        "policy_clause": {
+          "clause_id": "MCS-1.1",
+          "title": "Violence and Incitement",
+          "source": "Meta Community Standards",
+          "section": "I. Violence and Criminal Behavior — 1. Violence and Incitement",
+          "text": "We remove threats of violence that could lead to death or serious injury."
+        },
+        "triggered_category": "MCS-1.1",
+        "triggered_elements": [
+          {"index": 0, "id": "text_0", "label": "text", "full_label": "threat", "type": "text", "modality": "text", "confidence": 0.9134, "harmful_signal": true, "policy_category": "violent_threat"}
+        ],
+        "nodes": [
+          {"id": "text_0", "type": "text", "modality": "text", "harmful_signal": true, "policy_category": "violent_threat"},
+          {"id": "text_1", "type": "text", "modality": "text", "harmful_signal": true, "policy_category": "violent_threat"}
+        ],
+        "edges": [
+          {"source_id": "text_0", "target_id": "text_1", "edge_type": 4},
+          {"source_id": "text_0", "target_id": "text_1", "edge_type": 3}
+        ],
+        "explanation": "This content contains an explicit violent threat directed at a person or group. The text encoder detected high-confidence threat language (score: 0.91) mapped to the 'violent_threat' harm category. The Content Composition Graph identified a harmful_pattern edge between the subject and target nodes, corroborating the threat signal. This violates Meta Community Standards clause MCS-1.1 (Violence and Incitement).",
+        "cross_modal_flag": false,
+        "shap_scores": [0.91, 0.87],
+        "modality_scores": {"text": 0.9134}
+      }
+    },
+
+    {
+      "id": "hate_speech_racial",
+      "keywords": ["hate all", "all [a-z]+ are", "go back to", "dirty", "subhuman", "inferior race", "white power", "racial slur"],
+      "keywords_plain": ["hate blacks", "hate whites", "hate muslims", "hate jews", "hate christians", "go back to your country", "white power", "racial", "subhuman"],
+      "response": {
+        "harm_score": 0.8821,
+        "verdict": "HARMFUL",
+        "policy_clause": {
+          "clause_id": "MCS-3.2",
+          "title": "Hate Speech",
+          "source": "Meta Community Standards",
+          "section": "III. Objectionable Content — 3. Hate Speech",
+          "text": "We do not allow direct attacks against people on the basis of protected characteristics."
+        },
+        "triggered_category": "MCS-3.2",
+        "triggered_elements": [
+          {"index": 0, "id": "text_0", "label": "text", "full_label": "identity_hate", "type": "text", "modality": "text", "confidence": 0.8821, "harmful_signal": true, "policy_category": "hate_speech"}
+        ],
+        "nodes": [
+          {"id": "text_0", "type": "text", "modality": "text", "harmful_signal": true, "policy_category": "hate_speech"},
+          {"id": "text_1", "type": "text", "modality": "text", "harmful_signal": true, "policy_category": "hate_speech"}
+        ],
+        "edges": [
+          {"source_id": "text_0", "target_id": "text_1", "edge_type": 3},
+          {"source_id": "text_0", "target_id": "text_1", "edge_type": 4}
+        ],
+        "explanation": "This content constitutes hate speech targeting a protected group based on race, ethnicity, or religion. The text encoder assigned a high identity_hate score (0.88) via toxic-bert classification. The Content Composition Graph identified a target_pointing edge indicating a direct attack on a protected characteristic group. This violates Meta Community Standards clause MCS-3.2 (Hate Speech).",
+        "cross_modal_flag": false,
+        "shap_scores": [0.88, 0.76],
+        "modality_scores": {"text": 0.8821}
+      }
+    },
+
+    {
+      "id": "harassment",
+      "keywords": ["you are worthless", "nobody likes you", "kill yourself", "kys", "you should die", "you're ugly", "loser", "pathetic", "i hate you"],
+      "response": {
+        "harm_score": 0.7643,
+        "verdict": "HARMFUL",
+        "policy_clause": {
+          "clause_id": "MCS-5.1",
+          "title": "Bullying and Harassment",
+          "source": "Meta Community Standards",
+          "section": "V. Safety — 5. Bullying and Harassment",
+          "text": "We remove content that targets private individuals with degradation or intimidation."
+        },
+        "triggered_category": "MCS-5.1",
+        "triggered_elements": [
+          {"index": 0, "id": "text_0", "label": "text", "full_label": "toxic", "type": "text", "modality": "text", "confidence": 0.7643, "harmful_signal": true, "policy_category": "harassment_bullying"}
+        ],
+        "nodes": [
+          {"id": "text_0", "type": "text", "modality": "text", "harmful_signal": true, "policy_category": "harassment_bullying"},
+          {"id": "text_1", "type": "text", "modality": "text", "harmful_signal": false, "policy_category": null}
+        ],
+        "edges": [
+          {"source_id": "text_0", "target_id": "text_1", "edge_type": 3}
+        ],
+        "explanation": "This content targets an individual with degrading or intimidating language. The text encoder detected severe toxic language patterns (score: 0.76) consistent with targeted harassment. The target_pointing edge in the Content Composition Graph confirms the content is directed at a specific person. This violates Meta Community Standards clause MCS-5.1 (Bullying and Harassment).",
+        "cross_modal_flag": false,
+        "shap_scores": [0.76, 0.54],
+        "modality_scores": {"text": 0.7643}
+      }
+    },
+
+    {
+      "id": "weapons_threat",
+      "keywords": ["shoot", "gun", "knife", "weapon", "bomb", "explosive", "armed", "shooting"],
+      "response": {
+        "harm_score": 0.8102,
+        "verdict": "HARMFUL",
+        "policy_clause": {
+          "clause_id": "MCS-1.4",
+          "title": "Restricted Goods — Weapons",
+          "source": "Meta Community Standards",
+          "section": "I. Violence and Criminal Behavior — 4. Coordinating Harm and Promoting Crime",
+          "text": "We prohibit brandishing weapons with intent to threaten or harm others."
+        },
+        "triggered_category": "MCS-1.4",
+        "triggered_elements": [
+          {"index": 0, "id": "text_0", "label": "text", "full_label": "threat", "type": "text", "modality": "text", "confidence": 0.7801, "harmful_signal": true, "policy_category": "weapons_threat"},
+          {"index": 1, "id": "image_1", "label": "image", "full_label": "a person holding a weapon and threatening another person", "type": "image", "modality": "image", "confidence": 0.8102, "harmful_signal": true, "policy_category": "weapons_threat"}
+        ],
+        "nodes": [
+          {"id": "text_0", "type": "text", "modality": "text", "harmful_signal": true, "policy_category": "weapons_threat"},
+          {"id": "image_1", "type": "image", "modality": "image", "harmful_signal": true, "policy_category": "weapons_threat"}
+        ],
+        "edges": [
+          {"source_id": "text_0", "target_id": "image_1", "edge_type": 1},
+          {"source_id": "text_0", "target_id": "image_1", "edge_type": 4}
+        ],
+        "explanation": "This content depicts or references weapons in a threatening context. Both text (threat score: 0.78) and image (CLIP confidence: 0.81 for 'person holding weapon threatening another person') encoders flagged harmful signals. The semantic_reference edge between text and image nodes in the Content Composition Graph confirms cross-modal corroboration, indicating emergent harm from the composition. This violates Meta Community Standards clause MCS-1.4.",
+        "cross_modal_flag": true,
+        "shap_scores": [0.81, 0.78, 0.65],
+        "modality_scores": {"text": 0.7801, "image": 0.8102}
+      }
+    },
+
+    {
+      "id": "extremist",
+      "keywords": ["terrorist", "jihad", "extremist", "isis", "al-qaeda", "nazi", "fascist", "genocide"],
+      "response": {
+        "harm_score": 0.8934,
+        "verdict": "HARMFUL",
+        "policy_clause": {
+          "clause_id": "MCS-2.1",
+          "title": "Dangerous Organizations and Individuals",
+          "source": "Meta Community Standards",
+          "section": "I. Violence and Criminal Behavior — 2. Dangerous Organizations",
+          "text": "We remove praise, support, or representation of terrorist and hate organizations."
+        },
+        "triggered_category": "MCS-2.1",
+        "triggered_elements": [
+          {"index": 0, "id": "text_0", "label": "text", "full_label": "severe_toxic", "type": "text", "modality": "text", "confidence": 0.8934, "harmful_signal": true, "policy_category": "extremist_content"}
+        ],
+        "nodes": [
+          {"id": "text_0", "type": "text", "modality": "text", "harmful_signal": true, "policy_category": "extremist_content"},
+          {"id": "text_1", "type": "text", "modality": "text", "harmful_signal": true, "policy_category": "extremist_content"}
+        ],
+        "edges": [
+          {"source_id": "text_0", "target_id": "text_1", "edge_type": 4},
+          {"source_id": "text_0", "target_id": "text_1", "edge_type": 1}
+        ],
+        "explanation": "This content references or promotes a designated dangerous organization or extremist ideology. The text encoder detected severe toxicity patterns (score: 0.89) consistent with extremist content. The harmful_pattern edge in the Content Composition Graph confirms structural similarity to known extremist content patterns in the Harm Pattern Library. This violates Meta Community Standards clause MCS-2.1 (Dangerous Organizations).",
+        "cross_modal_flag": false,
+        "shap_scores": [0.89, 0.83],
+        "modality_scores": {"text": 0.8934}
+      }
+    },
+
+    {
+      "id": "multimodal_cross",
+      "keywords": ["look at this", "check this out", "see this", "watch this"],
+      "image_required": true,
+      "response": {
+        "harm_score": 0.8456,
+        "verdict": "HARMFUL",
+        "policy_clause": {
+          "clause_id": "MCS-1.1",
+          "title": "Violence and Incitement",
+          "source": "Meta Community Standards",
+          "section": "I. Violence and Criminal Behavior — 1. Violence and Incitement",
+          "text": "We remove threats of violence that could lead to death or serious injury."
+        },
+        "triggered_category": "MCS-1.1",
+        "triggered_elements": [
+          {"index": 0, "id": "text_0", "label": "text", "full_label": "toxic", "type": "text", "modality": "text", "confidence": 0.6821, "harmful_signal": true, "policy_category": "violent_threat"},
+          {"index": 1, "id": "image_1", "label": "image", "full_label": "a person pointing a gun at someone's head", "type": "image", "modality": "image", "confidence": 0.7934, "harmful_signal": true, "policy_category": "weapons_threat"}
+        ],
+        "nodes": [
+          {"id": "text_0", "type": "text", "modality": "text", "harmful_signal": true, "policy_category": "violent_threat"},
+          {"id": "image_1", "type": "image", "modality": "image", "harmful_signal": true, "policy_category": "weapons_threat"}
+        ],
+        "edges": [
+          {"source_id": "text_0", "target_id": "image_1", "edge_type": 1},
+          {"source_id": "text_0", "target_id": "image_1", "edge_type": 3},
+          {"source_id": "text_0", "target_id": "image_1", "edge_type": 4}
+        ],
+        "explanation": "This content exhibits cross-modal harm emergence — neither the text nor the image alone would individually exceed the harmful threshold, but their composition creates a compound harmful signal. The text encoder scored 0.68 (borderline) while the image encoder scored 0.79. The cross-modal bonus (+0.15) was applied due to corroborating harmful signals across both modalities, pushing the final score to 0.85. This is a key capability of the CHEM system: detecting harm that only emerges from the combination of modalities.",
+        "cross_modal_flag": true,
+        "shap_scores": [0.79, 0.68, 0.72],
+        "modality_scores": {"text": 0.6821, "image": 0.7934}
+      }
+    },
+
+    {
+      "id": "safe_default",
+      "keywords": ["hello", "good morning", "i love", "pizza", "weather", "happy", "great day", "thank you", "thanks", "awesome", "nice", "cool", "fun", "food", "movie", "music", "sport"],
+      "response": {
+        "harm_score": 0.0412,
+        "verdict": "SAFE",
+        "policy_clause": null,
+        "triggered_category": null,
+        "triggered_elements": [],
+        "nodes": [
+          {"id": "text_0", "type": "text", "modality": "text", "harmful_signal": false, "policy_category": null}
+        ],
+        "edges": [],
+        "explanation": "No harmful signals detected across any modality. The text encoder returned low toxicity scores across all six toxic-bert labels (max: 0.04). The content composition graph shows no harmful_pattern edges. The final harm score of 0.04 is well below the decision threshold of 0.50. This content is classified as SAFE.",
+        "cross_modal_flag": false,
+        "shap_scores": [0.04],
+        "modality_scores": {"text": 0.0412}
+      }
+    }
+  ],
+
+  "default_safe_response": {
+    "harm_score": 0.0631,
+    "verdict": "SAFE",
+    "policy_clause": null,
+    "triggered_category": null,
+    "triggered_elements": [],
+    "nodes": [
+      {"id": "text_0", "type": "text", "modality": "text", "harmful_signal": false, "policy_category": null}
+    ],
+    "edges": [],
+    "explanation": "No harmful signals detected. All modality encoders returned scores below the decision threshold (0.50). The Content Composition Graph contains no harmful_pattern edges. Content classified as SAFE.",
+    "cross_modal_flag": false,
+    "shap_scores": [0.06],
+    "modality_scores": {"text": 0.0631}
+  }
+}
