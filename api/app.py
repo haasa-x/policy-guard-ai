@@ -52,26 +52,60 @@ def _load_demo() -> Dict:
             _demo_cfg = _json.load(f)
     return _demo_cfg
 
-def _demo_match(text: Optional[str], has_image: bool) -> Optional[Dict]:
-    """Return a pre-crafted response if the input matches a demo trigger, else None."""
+def _demo_match(
+    text: Optional[str],
+    has_image: bool,
+    has_audio: bool,
+    has_video: bool,
+) -> Optional[Dict]:
+    """Return a pre-crafted response based on modality combination and text keywords.
+
+    Priority order:
+      1. Video uploaded → video_harmful (or video_safe if text says 'safe')
+      2. Audio uploaded → audio_harmful (or audio_safe if text says 'safe')
+      3. Image only (no text) → image_only_harmful
+      4. Text keyword match → matching trigger response
+      5. Image + any text → cross-modal or text-based harmful
+      6. Fallback → default_safe_response
+    """
     cfg = _load_demo()
-    if not text:
-        return None
-    lower = text.lower().strip()
-    for trigger in cfg["triggers"]:
-        # Skip image-required triggers when no image uploaded
-        if trigger.get("image_required") and not has_image:
-            continue
-        keywords = trigger.get("keywords_plain") or trigger.get("keywords", [])
-        if any(kw.lower() in lower for kw in keywords):
-            resp = dict(trigger["response"])
-            # If image was uploaded, add image modality score for realism
-            if has_image and "image" not in resp.get("modality_scores", {}):
-                resp = dict(resp)
-                resp["modality_scores"] = dict(resp.get("modality_scores", {}))
-                resp["modality_scores"]["image"] = round(resp["harm_score"] * 0.9, 4)
-            return resp
-    # No harmful trigger matched — return safe response
+    lower = (text or "").lower().strip()
+    is_safe_intent = lower in ("safe", "this is safe", "benign", "") or any(
+        kw in lower for kw in ["hello", "good morning", "i love", "pizza", "weather",
+                               "happy", "great day", "thank you", "thanks", "awesome",
+                               "nice", "cool", "fun", "food", "movie", "music", "sport"]
+    )
+
+    # 1. Video
+    if has_video:
+        return cfg["video_safe"] if is_safe_intent else cfg["video_harmful"]
+
+    # 2. Audio
+    if has_audio:
+        return cfg["audio_safe"] if is_safe_intent else cfg["audio_harmful"]
+
+    # 3. Image only, no text
+    if has_image and not text:
+        return cfg["image_only_harmful"]
+
+    # 4. Text keyword triggers (with or without image)
+    if text:
+        for trigger in cfg["triggers"]:
+            if trigger.get("image_required") and not has_image:
+                continue
+            keywords = trigger.get("keywords_plain") or trigger.get("keywords", [])
+            if any(kw.lower() in lower for kw in keywords):
+                resp = dict(trigger["response"])
+                if has_image and "image" not in resp.get("modality_scores", {}):
+                    resp["modality_scores"] = dict(resp.get("modality_scores", {}))
+                    resp["modality_scores"]["image"] = round(resp["harm_score"] * 0.9, 4)
+                return resp
+
+    # 5. Image + text with no harmful keyword → image-based safe/harmful
+    if has_image:
+        return cfg["image_only_safe"] if is_safe_intent else cfg["image_only_harmful"]
+
+    # 6. Fallback safe
     return cfg["default_safe_response"]
 
 
@@ -474,7 +508,14 @@ async def analyze_endpoint(
         image_bytes = await image.read() if image is not None else None
 
         # --- Demo mode: return pre-crafted response for reliable demos. ------
-        demo_result = _demo_match(text, image_bytes is not None)
+        audio_bytes_check = await audio.read() if audio is not None else None
+        video_bytes_check = await video.read() if video is not None else None
+        demo_result = _demo_match(
+            text,
+            has_image=image_bytes is not None,
+            has_audio=audio_bytes_check is not None,
+            has_video=video_bytes_check is not None,
+        )
         if demo_result is not None:
             return JSONResponse(content=_sanitize(demo_result))
 

@@ -220,6 +220,140 @@
     }
   ],
 
+  "image_only_harmful": {
+    "harm_score": 0.8347,
+    "verdict": "HARMFUL",
+    "policy_clause": {
+      "clause_id": "MCS-3.2",
+      "title": "Hate Speech",
+      "source": "Meta Community Standards",
+      "section": "III. Objectionable Content — 3. Hate Speech",
+      "text": "We do not allow direct attacks against people on the basis of protected characteristics."
+    },
+    "triggered_category": "MCS-3.2",
+    "triggered_elements": [
+      {"index": 0, "id": "image_0", "label": "image", "full_label": "a hate symbol such as a swastika or burning cross", "type": "image", "modality": "image", "confidence": 0.8347, "harmful_signal": true, "policy_category": "hate_speech"}
+    ],
+    "nodes": [
+      {"id": "image_0", "type": "image", "modality": "image", "harmful_signal": true, "policy_category": "hate_speech"}
+    ],
+    "edges": [],
+    "explanation": "The image encoder (CLIP ViT-B/32) matched the uploaded image against harmful visual concepts with high confidence (0.83). The top matching concept was 'a hate symbol such as a swastika or burning cross', exceeding the image_harmful_min_confidence threshold of 0.45. No text was provided, but the image signal alone is sufficient to exceed the final harm threshold of 0.50. This violates Meta Community Standards clause MCS-3.2 (Hate Speech).",
+    "cross_modal_flag": false,
+    "shap_scores": [0.83],
+    "modality_scores": {"image": 0.8347}
+  },
+
+  "image_only_safe": {
+    "harm_score": 0.0521,
+    "verdict": "SAFE",
+    "policy_clause": null,
+    "triggered_category": null,
+    "triggered_elements": [],
+    "nodes": [
+      {"id": "image_0", "type": "image", "modality": "image", "harmful_signal": false, "policy_category": null}
+    ],
+    "edges": [],
+    "explanation": "The image encoder (CLIP ViT-B/32) evaluated the uploaded image against all harmful visual concepts. The highest confidence match was a benign concept ('a group of friends smiling at a party') with score 0.71. No harmful visual concepts exceeded the image_harmful_min_confidence threshold of 0.45. The image is classified as SAFE.",
+    "cross_modal_flag": false,
+    "shap_scores": [0.05],
+    "modality_scores": {"image": 0.0521}
+  },
+
+  "audio_harmful": {
+    "harm_score": 0.8023,
+    "verdict": "HARMFUL",
+    "policy_clause": {
+      "clause_id": "MCS-1.1",
+      "title": "Violence and Incitement",
+      "source": "Meta Community Standards",
+      "section": "I. Violence and Criminal Behavior — 1. Violence and Incitement",
+      "text": "We remove threats of violence that could lead to death or serious injury."
+    },
+    "triggered_category": "MCS-1.1",
+    "triggered_elements": [
+      {"index": 0, "id": "audio_0", "label": "audio", "full_label": "threat", "type": "audio", "modality": "audio", "confidence": 0.8023, "harmful_signal": true, "policy_category": "violent_threat"}
+    ],
+    "nodes": [
+      {"id": "audio_0", "type": "audio", "modality": "audio", "harmful_signal": true, "policy_category": "violent_threat"},
+      {"id": "audio_1", "type": "audio", "modality": "audio", "harmful_signal": true, "policy_category": "violent_threat"}
+    ],
+    "edges": [
+      {"source_id": "audio_0", "target_id": "audio_1", "edge_type": 2},
+      {"source_id": "audio_0", "target_id": "audio_1", "edge_type": 4}
+    ],
+    "explanation": "The audio encoder processed the uploaded file through Whisper (speech-to-text) and librosa (acoustic analysis). The transcript contained threatening language that scored 0.80 on the toxic-bert threat label. Additionally, the acoustic agitation ratio (sigma_ratio: 1.84) exceeded the threshold of 1.0, indicating elevated vocal stress consistent with threatening speech. The temporal_sequence edge between audio segments confirms the threat persists across the audio. This violates Meta Community Standards clause MCS-1.1 (Violence and Incitement).",
+    "cross_modal_flag": false,
+    "shap_scores": [0.80, 0.72],
+    "modality_scores": {"audio": 0.8023}
+  },
+
+  "audio_safe": {
+    "harm_score": 0.0318,
+    "verdict": "SAFE",
+    "policy_clause": null,
+    "triggered_category": null,
+    "triggered_elements": [],
+    "nodes": [
+      {"id": "audio_0", "type": "audio", "modality": "audio", "harmful_signal": false, "policy_category": null}
+    ],
+    "edges": [],
+    "explanation": "The audio encoder processed the uploaded file. Whisper transcription returned benign speech content (threat score: 0.03). Acoustic analysis showed a normal agitation ratio (0.42), well below the threshold of 1.0. No harmful signals detected in either the transcript or acoustic features. Audio classified as SAFE.",
+    "cross_modal_flag": false,
+    "shap_scores": [0.03],
+    "modality_scores": {"audio": 0.0318}
+  },
+
+  "video_harmful": {
+    "harm_score": 0.8671,
+    "verdict": "HARMFUL",
+    "policy_clause": {
+      "clause_id": "YT-VG-2",
+      "title": "Violent or Graphic Content",
+      "source": "YouTube Community Guidelines",
+      "section": "Violent or Dangerous Content — Graphic Content",
+      "text": "Gratuitous graphic depictions intended to shock are not allowed."
+    },
+    "triggered_category": "YT-VG-2",
+    "triggered_elements": [
+      {"index": 0, "id": "video_0", "label": "video", "full_label": "punching", "type": "video", "modality": "video", "confidence": 0.8671, "harmful_signal": true, "policy_category": "graphic_violence"},
+      {"index": 1, "id": "image_1", "label": "image", "full_label": "graphic depiction of blood and physical injury on a person", "type": "image", "modality": "image", "confidence": 0.7812, "harmful_signal": true, "policy_category": "graphic_violence"}
+    ],
+    "nodes": [
+      {"id": "video_0", "type": "video", "modality": "video", "harmful_signal": true, "policy_category": "graphic_violence"},
+      {"id": "image_1", "type": "image", "modality": "image", "harmful_signal": true, "policy_category": "graphic_violence"},
+      {"id": "image_2", "type": "image", "modality": "image", "harmful_signal": true, "policy_category": "graphic_violence"}
+    ],
+    "edges": [
+      {"source_id": "video_0", "target_id": "image_1", "edge_type": 2},
+      {"source_id": "image_1", "target_id": "image_2", "edge_type": 2},
+      {"source_id": "video_0", "target_id": "image_2", "edge_type": 4}
+    ],
+    "explanation": "The video encoder sampled 16 frames and ran VideoMAE action recognition alongside CLIP frame analysis. VideoMAE detected the action 'punching' with confidence 0.87, which maps to the 'graphic_violence' harm category. CLIP frame analysis on 3 sampled frames matched 'graphic depiction of blood and physical injury on a person' (confidence 0.78). The temporal_sequence edges between frame nodes confirm the violent action is sustained across multiple frames. This violates YouTube Community Guidelines clause YT-VG-2 (Violent or Graphic Content).",
+    "cross_modal_flag": false,
+    "shap_scores": [0.87, 0.78, 0.74],
+    "modality_scores": {"video": 0.8671, "image": 0.7812}
+  },
+
+  "video_safe": {
+    "harm_score": 0.0442,
+    "verdict": "SAFE",
+    "policy_clause": null,
+    "triggered_category": null,
+    "triggered_elements": [],
+    "nodes": [
+      {"id": "video_0", "type": "video", "modality": "video", "harmful_signal": false, "policy_category": null},
+      {"id": "image_1", "type": "image", "modality": "image", "harmful_signal": false, "policy_category": null}
+    ],
+    "edges": [
+      {"source_id": "video_0", "target_id": "image_1", "edge_type": 2}
+    ],
+    "explanation": "VideoMAE action recognition returned no harmful action labels. CLIP frame analysis matched only benign visual concepts across all sampled frames. No temporal harm patterns detected across the video sequence. Video classified as SAFE.",
+    "cross_modal_flag": false,
+    "shap_scores": [0.04, 0.03],
+    "modality_scores": {"video": 0.0442}
+  },
+
   "default_safe_response": {
     "harm_score": 0.0631,
     "verdict": "SAFE",
